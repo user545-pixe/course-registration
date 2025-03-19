@@ -54,7 +54,7 @@ const OrderSchema = new mongoose.Schema({
         default: 'XYZ Conference Center, Room 201'
     },
     createdAt: {
-        type: Date,
+    type: Date,
         default: Date.now
     }
 });

@@ -10,20 +10,38 @@
     <div class="container">
         <h1>Course Registration Form</h1>
         
-        <div id="status-message" class="status-message" style="display: none;"></div>
+        <% if (message) { %>
+            <div class="status-message <%= messageType %>">
+                <%= message %>
+            </div>
+        <% } %>
         
         <div class="course-options">
             <h2>Available Courses</h2>
             
-            <div class="courses-list" id="courses-container">
-                <!-- Courses will be loaded dynamically via JavaScript -->
-                <p id="loading-message">Loading available courses...</p>
+            <div class="courses-list">
+                <% if(courses && courses.length > 0) { %>
+                    <% courses.forEach(course => { %>
+                        <div class="course-card" onclick="selectCourse('<%= course._id %>', '<%= course.name %>', '<%= course.price %>')">
+                            <h3><%= course.name %></h3>
+                            <p><%= course.description %></p>
+                            <div class="course-details">
+                                <span><strong>Duration:</strong> <%= course.duration %></span>
+                                <span><strong>Price:</strong> $<%= course.price %></span>
+                                <span><strong>Venue:</strong> <%= course.venue %></span>
+                                <span><strong>Start Date:</strong> <%= new Date(course.startDate).toLocaleDateString() %></span>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <p>No courses available at the moment. Please check back later.</p>
+                <% } %>
             </div>
         </div>
         
         
 
-        <form id="registrationForm" method="POST" enctype="multipart/form-data">
+        <form id="registrationForm" action="/submit-registration" method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="fullName">Full Name *</label>
                 <input type="text" id="fullName" name="fullName" required>
@@ -55,17 +73,16 @@
                 <input type="text" id="transactionId" name="transactionId" required>
             </div>
             <div class="payment-details">
-                <h2>Our Payment Account Details</h2>
-                <p>Please make payment to our account and insert your payment details in the form below.</p>
-                <p><strong>01913565659</strong></p>
+                <h2>Payment Details</h2>
+                <p>Please make payment and insert your payment details below.</p>
             </div>
     
             <div class="warning">
                 <div class="warning-title">Payment Instructions:</div>
                 <ol class="rules">
-                    <li>Make the exact payment to the account number shown above.</li>
+                    <li>Make the payment to the provided account.</li>
                     <li>Take a screenshot of your transaction receipt.</li>
-                    <li>Fill in the form below with your details and transaction ID.</li>
+                    <li>Fill in the form with your details and transaction ID.</li>
                     <li>Upload your payment screenshot.</li>
                     <li>Submit the form to complete your registration.</li>
                 </ol>
@@ -95,44 +112,6 @@
             const receiptInput = document.getElementById('receiptImage');
             const receiptPreview = document.getElementById('receiptPreview');
             const submitBtn = document.getElementById('submitBtn');
-            const coursesContainer = document.getElementById('courses-container');
-            const loadingMessage = document.getElementById('loading-message');
-            const statusMessage = document.getElementById('status-message');
-            
-            // Load courses from Netlify function
-            fetch('/.netlify/functions/courses')
-                .then(response => response.json())
-                .then(data => {
-                    loadingMessage.style.display = 'none';
-                    
-                    if (data.courses && data.courses.length > 0) {
-                        data.courses.forEach(course => {
-                            const courseCard = document.createElement('div');
-                            courseCard.className = 'course-card';
-                            courseCard.onclick = () => selectCourse(course._id, course.name, course.price);
-                            
-                            courseCard.innerHTML = `
-                                <h3>${course.name}</h3>
-                                <p>${course.description}</p>
-                                <div class="course-details">
-                                    <span><strong>Duration:</strong> ${course.duration}</span>
-                                    <span><strong>Price:</strong> $${course.price}</span>
-                                    <span><strong>Venue:</strong> ${course.venue}</span>
-                                    <span><strong>Start Date:</strong> ${new Date(course.startDate).toLocaleDateString()}</span>
-                                </div>
-                            `;
-                            
-                            coursesContainer.appendChild(courseCard);
-                        });
-                    } else {
-                        coursesContainer.innerHTML = '<p>No courses available at the moment. Please check back later.</p>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading courses:', error);
-                    loadingMessage.style.display = 'none';
-                    coursesContainer.innerHTML = '<p>Error loading courses. Please refresh the page to try again.</p>';
-                });
             
             // Image preview functionality
             receiptInput.addEventListener('change', (e) => {
@@ -155,10 +134,8 @@
                 }
             });
             
-            // Form submission
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
+            // Form validation
+            form.addEventListener('submit', (e) => {
                 let valid = true;
                 const required = ['fullName', 'email', 'phone', 'courseName', 'transactionId'];
                 
@@ -180,66 +157,11 @@
                 }
                 
                 if (!valid) {
+                    e.preventDefault();
                     alert('Please fill in all required fields');
-                    return;
-                }
-                
-                // Disable submit button while processing
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Submitting...';
-                
-                try {
-                    // In a production app, we would handle file uploads separately
-                    // For this example, we're simplifying by not handling the actual file upload
-                    
-                    const formData = {
-                        fullName: document.getElementById('fullName').value,
-                        email: document.getElementById('email').value,
-                        phone: document.getElementById('phone').value,
-                        courseId: document.getElementById('courseId').value,
-                        courseName: document.getElementById('courseName').value,
-                        transactionId: document.getElementById('transactionId').value,
-                        additionalNotes: document.getElementById('additionalNotes').value,
-                        receiptImage: 'receipt-placeholder.jpg' // In a real app, we'd use a separate service for file uploads
-                    };
-                    
-                    const response = await fetch('/.netlify/functions/submit-registration', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formData)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        // Show success message
-                        statusMessage.textContent = result.message;
-                        statusMessage.className = 'status-message success';
-                        statusMessage.style.display = 'block';
-                        
-                        // Reset form
-                        form.reset();
-                        receiptPreview.style.display = 'none';
-                        
-                        // Scroll to message
-                        statusMessage.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                        // Show error message
-                        statusMessage.textContent = result.error || 'Error submitting registration. Please try again.';
-                        statusMessage.className = 'status-message error';
-                        statusMessage.style.display = 'block';
-                    }
-                } catch (error) {
-                    console.error('Error submitting form:', error);
-                    statusMessage.textContent = 'Error submitting registration. Please try again.';
-                    statusMessage.className = 'status-message error';
-                    statusMessage.style.display = 'block';
-                } finally {
-                    // Re-enable submit button
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Submit Registration';
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Submitting...';
                 }
             });
         });
