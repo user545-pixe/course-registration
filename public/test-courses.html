@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .course-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        #coursesList {
+            margin-top: 20px;
+        }
+        input {
+            padding: 8px;
+            width: 100%;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Courses API Test</h1>
+    
+    <div class="status" id="status">Status: Ready to test</div>
+    
+    <div>
+        <label for="baseUrl">Base URL (optional):</label>
+        <input type="text" id="baseUrl" placeholder="Leave empty for current domain, or enter https://your-railway-app.up.railway.app">
+    </div>
+    
+    <div>
+        <button onclick="fetchCoursesNetlify()">Test Netlify Function Path</button>
+        <button onclick="fetchCoursesRailway()">Test API Endpoint</button>
+    </div>
+    
+    <div id="coursesList"></div>
+    
+    <script>
+        const statusEl = document.getElementById('status');
+        const coursesListEl = document.getElementById('coursesList');
+        const baseUrlEl = document.getElementById('baseUrl');
+        
+        // Function to get the base URL
+        function getBaseUrl() {
+            const baseUrl = baseUrlEl.value.trim();
+            return baseUrl ? (baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl) : '';
+        }
+        
+        // Function to fetch courses from Netlify endpoint
+        async function fetchCoursesNetlify() {
+            statusEl.textContent = 'Status: Fetching from Netlify function path...';
+            coursesListEl.innerHTML = '';
+            
+            try {
+                // Use the same Netlify function URL path
+                const baseUrl = getBaseUrl();
+                const url = `${baseUrl}/.netlify/functions/courses`;
+                statusEl.textContent = `Status: Fetching from ${url}...`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayCourses(data.courses);
+                statusEl.textContent = `Status: Successfully fetched from ${url}`;
+            } catch (error) {
+                console.error('Error fetching:', error);
+                statusEl.textContent = `Status: Error fetching - ${error.message}`;
+            }
+        }
+        
+        // Function to fetch courses from Railway endpoint
+        async function fetchCoursesRailway() {
+            statusEl.textContent = 'Status: Fetching from API endpoint...';
+            coursesListEl.innerHTML = '';
+            
+            try {
+                // Use the new API endpoint
+                const baseUrl = getBaseUrl();
+                const url = `${baseUrl}/api/courses`;
+                statusEl.textContent = `Status: Fetching from ${url}...`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayCourses(data.courses);
+                statusEl.textContent = `Status: Successfully fetched from ${url}`;
+            } catch (error) {
+                console.error('Error fetching:', error);
+                statusEl.textContent = `Status: Error fetching - ${error.message}`;
+            }
+        }
+        
+        // Function to display courses
+        function displayCourses(courses) {
+            if (!courses || courses.length === 0) {
+                coursesListEl.innerHTML = '<p>No courses available</p>';
+                return;
+            }
+            
+            let html = '<h2>Available Courses</h2>';
+            
+            courses.forEach(course => {
+                const startDate = course.startDate ? new Date(course.startDate).toLocaleDateString() : 'N/A';
+                
+                html += `
+                    <div class="course-card">
+                        <h3>${course.name}</h3>
+                        <p>${course.description || 'No description available'}</p>
+                        <div class="course-details">
+                            <p><strong>Price:</strong> $${course.price || 'N/A'}</p>
+                            <p><strong>Duration:</strong> ${course.duration || 'N/A'}</p>
+                            <p><strong>Venue:</strong> ${course.venue || 'N/A'}</p>
+                            <p><strong>Start Date:</strong> ${startDate}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            coursesListEl.innerHTML = html;
+        }
+    </script>
+</body>
+</html> 

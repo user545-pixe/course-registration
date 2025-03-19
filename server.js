@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const { sendConfirmationEmail } = require('./config/email');
 const session = require('express-session');
+const cors = require('cors');
 
 // Load environment variables
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(cors());
 
 // Session middleware for admin authentication
 app.use(session({
@@ -113,6 +115,28 @@ const isSuperAdmin = async (req, res, next) => {
         });
     }
 };
+
+// API endpoint to replace Netlify function
+app.get('/api/courses', async (req, res) => {
+    try {
+        const courses = await Course.find({ isActive: true });
+        res.json({ courses });
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        res.status(500).json({ error: 'Failed to load courses' });
+    }
+});
+
+// Compatibility endpoint for existing Netlify function URL
+app.get('/.netlify/functions/courses', async (req, res) => {
+    try {
+        const courses = await Course.find({ isActive: true });
+        res.json({ courses });
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        res.status(500).json({ error: 'Failed to load courses' });
+    }
+});
 
 // Routes
 // Home page - Course registration form
