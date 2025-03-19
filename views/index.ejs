@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Form</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Payment Form</h1>
+        
+        <div class="payment-details">
+            <h2>Our Payment (BK) Account Details</h2>
+            <p>Please make payment to our account and insert your payment details in the field below.</p>
+            <p><strong>01913565659</strong></p>
+        </div>
+
+        <div class="warning">
+            <div class="warning-title">সতর্কতা ও নিয়মাবলীঃ</div>
+            <ol class="rules">
+                <li>উপরে বিকাশ এজেন্ট নাম্বার এ নির্দিষ্ট পরিমান টাকা ক্যাশ আউট দিবেন।</li>
+                <li>ক্যাশ আউট অবশ্যই নিজের নাম্বার থেকে পাঠাবেন। সন্দেহ মনে হলে অর্ডার বাতিল করা হবে ও টাকা ফেরত নেওয়ার জন্য তথ্য দিতে হবে। তাই third party লেনদেন থেকে বিরত থাকুন।</li>
+                <li>টাকা ক্যাশ আউট করার পরে একটি স্ক্রিনশট ও ট্রানজেকশন Id নিবেন।</li>
+                <li>আপনার ক্যাশ আউট ট্রাঞ্জেকশন ID ও স্ক্রীনশট নিচের বক্স গুলোতে দিন এবং কনফার্ম করেন।</li>
+                <li>এডমিন ৫-৩০ মিনিট এর মধ্যে আপনার অর্ডার কমপ্লিট করবে ইনশাআল্লাহ।</li>
+            </ol>
+        </div>
+
+        <% if (message) { %>
+            <div class="status-message <%= messageType %>">
+                <%= message %>
+            </div>
+        <% } else { %>
+            <div class="status-message waiting">
+                waiting for payment
+            </div>
+        <% } %>
+
+        <form id="paymentForm" action="/submit-payment" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="transactionId">Your Payment Details (Transaction ID) *</label>
+                <input type="text" id="transactionId" name="transactionId" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentProof">Payment Proof (Screenshot) *</label>
+                <input type="file" id="paymentProof" name="paymentProof" accept="image/*" required>
+                <img id="proofPreview" class="proof-preview" style="display: none;">
+            </div>
+            
+            <div class="form-group">
+                <label for="additionalInfo">Additional Information (Optional)</label>
+                <textarea id="additionalInfo" name="additionalInfo"></textarea>
+            </div>
+            
+            <button type="submit" id="submitBtn" class="btn">Submit Payment Details</button>
+        </form>
+        
+        <p class="contact">
+            Have a problem with payment? <a href="mailto:contact@example.com">Contact us</a>
+        </p>
+    </div>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html> 

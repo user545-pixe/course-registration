@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+    <div class="admin-header">
+        <div class="admin-header-title">
+            <h1>Admin Management</h1>
+        </div>
+        <div class="admin-nav">
+            <ul>
+                <li><a href="/admin/dashboard">Dashboard</a></li>
+                <li><a href="/admin/courses">Courses</a></li>
+                <li><a href="/admin/admins" class="active">Admins</a></li>
+                <li><a href="/admin/settings">Settings</a></li>
+                <li><a href="/admin/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <% if (message) { %>
+            <div class="status-message <%= messageType %>">
+                <%= message %>
+            </div>
+        <% } %>
+
+        <div class="admin-section">
+            <div class="section-header">
+                <h2>Create New Admin</h2>
+            </div>
+            
+            <div class="admin-form-container">
+                <form action="/admin/admins/create" method="POST" class="admin-create-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select id="role" name="role">
+                            <option value="admin">Admin</option>
+                            <option value="super-admin">Super Admin</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn admin-btn">Create Admin</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-header">
+                <h2>Admin Users</h2>
+                <div class="filter-controls">
+                    <input type="text" id="searchAdmin" placeholder="Search admins..." onkeyup="filterAdmins()">
+                </div>
+            </div>
+            
+            <div class="orders-table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if(admins && admins.length > 0) { %>
+                            <% admins.forEach(admin => { %>
+                                <tr class="admin-row">
+                                    <td><%= admin.username %></td>
+                                    <td><%= admin.email %></td>
+                                    <td><%= admin.role %></td>
+                                    <td><%= new Date(admin.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <span class="status-badge <%= admin.isActive ? 'approved' : 'rejected' %>">
+                                            <%= admin.isActive ? 'Active' : 'Inactive' %>
+                                        </span>
+                                    </td>
+                                    <td class="actions-cell">
+                                        <button onclick="editAdmin('<%= admin._id %>')" class="action-btn view-btn">
+                                            Edit
+                                        </button>
+                                        
+                                        <% if(admin.isActive) { %>
+                                            <button onclick="deactivateAdmin('<%= admin._id %>')" class="action-btn reject-btn">
+                                                Deactivate
+                                            </button>
+                                        <% } else { %>
+                                            <button onclick="activateAdmin('<%= admin._id %>')" class="action-btn approve-btn">
+                                                Activate
+                                            </button>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="no-records">No admin users found</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Admin Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2>Edit Admin</h2>
+            <div id="modalContent">
+                <form id="editAdminForm" action="/admin/admins/update" method="POST" class="admin-edit-form">
+                    <input type="hidden" id="editAdminId" name="adminId">
+                    
+                    <div class="form-group">
+                        <label for="editUsername">Username</label>
+                        <input type="text" id="editUsername" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editEmail">Email</label>
+                        <input type="email" id="editEmail" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPassword">New Password (leave blank to keep current)</label>
+                        <input type="password" id="editPassword" name="password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editRole">Role</label>
+                        <select id="editRole" name="role">
+                            <option value="admin">Admin</option>
+                            <option value="super-admin">Super Admin</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn admin-btn">Update Admin</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Filter admins based on search input
+        function filterAdmins() {
+            const searchInput = document.getElementById('searchAdmin').value.toLowerCase();
+            const rows = document.querySelectorAll('.admin-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                
+                // Show/hide based on search text
+                if (text.includes(searchInput)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        // Edit admin
+        function editAdmin(adminId) {
+            const modal = document.getElementById('editModal');
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Fetch admin details
+            fetch(`/admin/admins/${adminId}`)
+                .then(response => response.json())
+                .then(admin => {
+                    document.getElementById('editAdminId').value = admin._id;
+                    document.getElementById('editUsername').value = admin.username;
+                    document.getElementById('editEmail').value = admin.email;
+                    document.getElementById('editRole').value = admin.role;
+                })
+                .catch(error => {
+                    alert(`Error loading admin details: ${error.message}`);
+                });
+        }
+        
+        // Activate admin
+        function activateAdmin(adminId) {
+            if (confirm('Are you sure you want to activate this admin?')) {
+                fetch(`/admin/admins/${adminId}/activate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to activate admin');
+                    }
+                })
+                .catch(error => {
+                    alert(`Error: ${error.message}`);
+                });
+            }
+        }
+        
+        // Deactivate admin
+        function deactivateAdmin(adminId) {
+            if (confirm('Are you sure you want to deactivate this admin?')) {
+                fetch(`/admin/admins/${adminId}/deactivate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to deactivate admin');
+                    }
+                })
+                .catch(error => {
+                    alert(`Error: ${error.message}`);
+                });
+            }
+        }
+        
+        // Form validation for create admin
+        document.querySelector('.admin-create-form').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match');
+            }
+        });
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 

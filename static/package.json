@@ -1,0 +1,15 @@
+{
+  "name": "course-registration-static",
+  "version": "1.0.0",
+  "description": "Static version of course registration system",
+  "scripts": {
+    "deploy": "surge ."
+  },
+  "devDependencies": {
+    "surge": "^0.23.1"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

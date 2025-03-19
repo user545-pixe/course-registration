@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Successful</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Registration Successful</h1>
+        
+        <div class="status-message success">
+            <h2>Thank you for your registration!</h2>
+            <p>Your registration has been successfully submitted and is pending approval.</p>
+        </div>
+        
+        <div class="registration-details">
+            <h3>Registration Details:</h3>
+            <div class="details-content">
+                <div class="detail-item">
+                    <span class="detail-label">Registration Number:</span>
+                    <span class="detail-value"><%= order.registrationNumber %></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value"><%= order.fullName %></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Course:</span>
+                    <span class="detail-value"><%= order.courseName %></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Event Date:</span>
+                    <span class="detail-value"><%= order.eventDate %></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Event Venue:</span>
+                    <span class="detail-value"><%= order.eventVenue %></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value status-<%= order.status %>"><%= order.status.toUpperCase() %></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="next-steps-box">
+            <h3>What happens next?</h3>
+            <p>Our team will review your payment details. Once approved, we'll send a confirmation email to <strong><%= order.email %></strong> with all the details you need for the event.</p>
+            <p>Please keep your registration number for future reference: <strong><%= order.registrationNumber %></strong></p>
+        </div>
+        
+        <div class="important-note">
+            <p><strong>Important:</strong> You will receive an email confirmation once your registration is approved.</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="btn">Return to Home</a>
+        </div>
+    </div>
+</body>
+</html> 

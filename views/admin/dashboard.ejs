@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+    <div class="admin-header">
+        <div class="admin-header-title">
+            <h1>Course Registration Admin</h1>
+        </div>
+        <div class="admin-nav">
+            <ul>
+                <li><a href="/admin/dashboard" class="active">Dashboard</a></li>
+                <li><a href="/admin/courses">Courses</a></li>
+                <li><a href="/admin/admins">Admins</a></li>
+                <li><a href="/admin/settings">Settings</a></li>
+                <li><a href="/admin/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <% if (message) { %>
+            <div class="status-message <%= messageType %>">
+                <%= message %>
+            </div>
+        <% } %>
+
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <h3>Total Orders</h3>
+                <div class="stat-number"><%= stats.totalOrders %></div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending</h3>
+                <div class="stat-number"><%= stats.pendingOrders %></div>
+            </div>
+            <div class="stat-card">
+                <h3>Approved</h3>
+                <div class="stat-number"><%= stats.approvedOrders %></div>
+            </div>
+            <div class="stat-card">
+                <h3>Rejected</h3>
+                <div class="stat-number"><%= stats.rejectedOrders %></div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="orders-section">
+                <div class="section-header">
+                    <h2>Recent Orders</h2>
+                    <div class="filter-controls">
+                        <select id="statusFilter" onchange="filterOrders()">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                        <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterOrders()">
+                    </div>
+                </div>
+                
+                <div class="orders-table-wrapper">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Reg #</th>
+                                <th>Name</th>
+                                <th>Course</th>
+                                <th>Email</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(orders && orders.length > 0) { %>
+                                <% orders.forEach(order => { %>
+                                    <tr class="order-row status-<%= order.status %>" data-status="<%= order.status %>">
+                                        <td><%= order.registrationNumber %></td>
+                                        <td><%= order.fullName %></td>
+                                        <td><%= order.courseName %></td>
+                                        <td><%= order.email %></td>
+                                        <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                                        <td>
+                                            <span class="status-badge <%= order.status %>">
+                                                <%= order.status %>
+                                            </span>
+                                        </td>
+                                        <td class="actions-cell">
+                                            <button onclick="viewOrder('<%= order._id %>')" class="action-btn view-btn">
+                                                View
+                                            </button>
+                                            
+                                            <% if(order.status === 'pending') { %>
+                                                <button onclick="approveOrder('<%= order._id %>')" class="action-btn approve-btn">
+                                                    Approve
+                                                </button>
+                                                <button onclick="rejectOrder('<%= order._id %>')" class="action-btn reject-btn">
+                                                    Reject
+                                                </button>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="7" class="no-records">No orders found</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2>Order Details</h2>
+            <div id="modalContent">
+                <!-- Content will be loaded here via AJAX -->
+                <div class="loader"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Filter orders based on status and search input
+        function filterOrders() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('.order-row');
+            
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                const text = row.textContent.toLowerCase();
+                
+                // Show/hide based on status filter
+                const statusMatch = statusFilter === 'all' || status === statusFilter;
+                
+                // Show/hide based on search text
+                const textMatch = searchInput === '' || text.includes(searchInput);
+                
+                if (statusMatch && textMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        // View order details
+        function viewOrder(orderId) {
+            const modal = document.getElementById('orderModal');
+            const modalContent = document.getElementById('modalContent');
+            
+            // Show modal and loader
+            modal.style.display = 'block';
+            modalContent.innerHTML = '<div class="loader"></div>';
+            
+            // Fetch order details
+            fetch(`/admin/orders/${orderId}`)
+                .then(response => response.text())
+                .then(html => {
+                    modalContent.innerHTML = html;
+                })
+                .catch(error => {
+                    modalContent.innerHTML = `<p class="error">Error loading order details: ${error.message}</p>`;
+                });
+        }
+        
+        // Approve order
+        function approveOrder(orderId) {
+            if (confirm('Are you sure you want to approve this order?')) {
+                fetch(`/admin/orders/${orderId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to approve order');
+                    }
+                })
+                .catch(error => {
+                    alert(`Error: ${error.message}`);
+                });
+            }
+        }
+        
+        // Reject order
+        function rejectOrder(orderId) {
+            if (confirm('Are you sure you want to reject this order?')) {
+                fetch(`/admin/orders/${orderId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to reject order');
+                    }
+                })
+                .catch(error => {
+                    alert(`Error: ${error.message}`);
+                });
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 
